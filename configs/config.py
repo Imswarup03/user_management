@@ -1,15 +1,16 @@
-
 import os
 from dotenv import load_dotenv
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv()
 
-load_dotenv(dotenv_path)
 
+
+SQLALCHEMY_DATABASE_URI= os.environ.get("SQL_ALCHEMY_DATABASE_URI")
+SECRET_KEY= os.environ.get("SECRET_KEY")
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://root:Swarup%40123@localhost/users"
-    SECRET_KEY = "JFJSFAW323294B34UY8238RWY83YR293"
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI
+    SECRET_KEY = SECRET_KEY
+    SQLALCHEMY_TRACK_MODIFICATIONS = True
     print("SQLALCHEMY_DATABASE_URI",SQLALCHEMY_DATABASE_URI)
 
