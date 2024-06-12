@@ -16,10 +16,10 @@ def create_db():
         user="root",
         password=os.environ.get('MYSQL_PASSWORD')
     )
-    # Create a cursor object
+    # create a cursor object
     cursor = conn.cursor()
     mysql_db = os.environ.get('MYSQL_DB')
-    # Check if the database exists and create it if it doesn't
+    # check if the database exists and create it if it doesn't
     cursor.execute(f"CREATE DATABASE IF NOT EXISTS {mysql_db}")
 
     # Close the cursor and connection
