@@ -17,6 +17,7 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES= timedelta(minutes=5)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=3)
     SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
+    CSRF_TOKEN= "ajsfiefuf812y1i2e12uf83f223yf812238f239"
 
     print("SQLALCHEMY_DATABASE_URI",SQLALCHEMY_DATABASE_URI)
 

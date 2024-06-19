@@ -1,9 +1,17 @@
 from flask import jsonify, Blueprint,request,make_response
+import pytz
+from datetime import  datetime
 from models.user_models import User,db
 from flask_bcrypt import Bcrypt
 from functools import wraps
 from pydantic import BaseModel,EmailStr, ValidationError
-from flask_jwt_extended import JWTManager , create_access_token,create_refresh_token,jwt_required,get_jwt_identity,get_current_user, set_access_cookies, set_refresh_cookies
+from flask_jwt_extended import JWTManager , create_access_token,create_refresh_token,jwt_required,get_jwt_identity,get_current_user, set_access_cookies, decode_token, set_refresh_cookies
+from configs.email_config import send_email
+import random
+import asyncio
+import os
+import time
+
 
 jwt= JWTManager()
 
@@ -109,7 +117,7 @@ def register():
                             phone_number=phone_number,
                             password=password,
                             role = role
-                        )
+                            )
                     db.session.add(user)
                     print("user",user)
                     db.session.commit()
@@ -261,24 +269,142 @@ def handle_refresh_token():
 
 
 
-@auth.route('/resetpassword',methods=['GET','POST'])
-def reset_password():
+@auth.route('/forgotpassword',methods=['GET','POST'])
+def forgot_password():
     try:
-
-        identity = request.args.get('identifier')
+        identity = request.json.get('identifier')
+        print('identity', identity)
         user = User.query.filter_by(username = identity).first() or  User.query.filter_by(email = identity).first() or  User.query.filter_by(phone_number = identity).first()
         if not user:
             return jsonify({
                 'message':"User doesn't exist",
                 "statusCode":401
             }),401
-        pass 
+        
         #send email to the user using a link with accessToken (Valid for 10 mins)
         #if user click on the link we will use that accessToken to verify the user
         #after verification user will enter password and confirm password 
         #we will update the password and save in th db
         #user can login again
+        else:
+            otp = random.randint(10000,999999)
+            print("OTP",otp)
+            username = user.username
+            email = user.email
+            set_access_cookies= create_access_token({'email':email})
+            print("cookies", set_access_cookies)
+            subject = 'Verification for Reset password'
+            body = f"Dear {user.firstname} {user.lastname}. Your OTP is {otp}. Use this to verify your identity."
+            send_email_user= send_email(email,subject,body)
+            if send_email_user:
+                response = jsonify({
+                    "message": "OTP sent Successfully",
+                    "statusCode":200
+                })
 
+                response.set_cookie(
+                    'access_cookies',set_access_cookies , max_age=10*60, secure= False, httponly=False
+                    )
+            secret_key = os.environ.get('SECRET_KEY')
+            set_password_reset = user.set_password_reset_expiration()
+            set_otp= user.generate_and_store_otp(otp, 10, secret_key)
+            print("set_otp",set_otp, "set_password_reset",set_password_reset)
+            return response,200
     except Exception as e:
-        pass
+        print(e)
+        return jsonify({
+            "message": "Something Went Wrong",
+            "statusCode": 500
+        }),500
 
+@auth.route('/verifyotp', methods= ['POST'])
+def verify_otp():
+    try:
+        access_cookies = request.cookies.get('access_cookies', None)
+        print("requests=====>", request)
+        print("access_cookies", access_cookies) 
+        otp= request.json.get('otp',None)
+        secret_key = os.environ.get('SECRET_KEY')
+        salt = 10
+        combined = f'{otp}{salt}{secret_key}'
+        # hashed_otp = bcrypt.generate_password_hash(combined,10).decode('utf-8')
+        print("OTP",otp)
+        if access_cookies and otp:
+            decoded_token = decode_token(access_cookies)
+            user_email = decoded_token['sub'].get('email')
+            print("decoded",user_email)
+            user= User.query.filter_by(email=user_email).first()
+            print("user", user)
+            stored_hashed_otp= user.otp
+            otpExpiresAt = user.otpExpiresAt
+            current_time = int(time.time())
+
+            if otpExpiresAt > current_time:
+                if verify_otp(stored_hashed_otp, combined):
+                    response = jsonify({
+                        'message':"sucess",
+                        "statusCode":200
+                    })
+                    # response.delete_cookie('access_cookies')
+                    user.otpExpiresAt = None
+                    # user.resetPasswordExpiresAt = None
+                    user.otp= None
+                    return response
+                else:
+                    return jsonify({
+                        'message':"OTP is Invalid",
+                        "statusCode":400
+                    }),400
+            else:
+                return jsonify({
+                        'message':"OTP is Expired",
+                        "statusCode":400
+                    }),400
+        else:
+            return jsonify({
+                'message':"OTP is Invalid Try Agin Later",
+                "statusCode":403
+            }),403
+    except Exception as e:
+        print(e)
+        return jsonify({
+                'message':"failed",
+                "statusCode":500
+            }),500
+
+
+@auth.route('/update-password', methods=['POST'])
+def reset_password():
+    pass
+    ''' reset the password'''
+    # 19th June
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def verify_otp(stored_hashed_otp, new_otp):
+    check = bcrypt.check_password_hash(stored_hashed_otp, new_otp)
+    print('check', check)
+    return check
