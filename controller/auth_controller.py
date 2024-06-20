@@ -162,7 +162,7 @@ def login():
 
             if check_password_hash:
                 refresh_token = create_refresh_token(user.username)
-                access_token= create_access_token({"name":user.username,"phone_number":user.phone_number}) # token expiry sets at JWT_TOKEN_EXPIRES in config.py
+                access_token= create_access_token({"name":user.username,"id":user.id}) # token expiry sets at JWT_TOKEN_EXPIRES in config.py
                 user.refreshToken = refresh_token
                 db.session.commit()
                 response =  jsonify(
@@ -200,6 +200,8 @@ def login():
 @jwt_required()
 def logout():
     try:
+        
+        print("request", request.headers)
         # Get the identity of the current user
         current_user = get_jwt_identity()
         print("logging out user:", current_user)
@@ -256,7 +258,7 @@ def handle_refresh_token():
                 "error":"No Valid Token present",
                 "message":"error"
             }),400
-        access_token= create_access_token({"name":user.username,"phone_number":user.phone_number})
+        access_token= create_access_token({"name":user.username,"id":user.id})
         return jsonify({
             "access_token":access_token
         })
@@ -373,12 +375,66 @@ def verify_otp():
             }),500
 
 
-@auth.route('/update-password', methods=['POST'])
+
+@auth.route('/reset-password', methods=['POST'])
 def reset_password():
-    pass
     ''' reset the password'''
     # 19th June
+    try:
+        access_cookie = request.cookies.get('access_cookies', '')
+        print("access_cookie", access_cookie)
+        if access_cookie:
+            try:
+                decoded_token = decode_token(access_cookie)
+                print("decoded_toke", decoded_token)
+            except Exception as e:
+                return jsonify({
+                    'message': "Please sign in again",
+                    'statusCode': 401
+                }), 401
 
+            email = decoded_token['sub'].get('email')
+            user = User.query.filter_by(email=email).first()
+
+            if not user:
+                return jsonify({
+                    'message': "User not found",
+                    'statusCode': 404
+                }), 404
+
+            password = request.json.get('password','')
+            confirm_password = request.json.get('confirm_password','')
+            print('password', password)
+            print('CONFIMR PASSWORD', confirm_password)
+            if password and confirm_password:
+                if password == confirm_password:
+                    print("password matched")
+                    set_password = user.update_password(password, confirm_password)
+                    response = jsonify({
+                        "message": "Your password has been updated successfully, login again",
+                        "statusCode": 200
+                    })
+                    response.delete_cookie('access_cookies')
+                    user.resetPasswordExpiresAt = None
+                    db.session.commit()
+                    return response, 200
+                else:
+                    return jsonify({
+                        "message": "Passwords must match",
+                        "statusCode": 400
+                    }), 400
+            else:
+                return jsonify({
+                    "message": "You must provide password and confirm password",
+                    'statusCode': 400
+                }), 400
+
+    except Exception as e:
+        print(e)
+        return jsonify({
+            'message': "Something went wrong",
+            "statusCode": 500
+        }), 500
 
 
 

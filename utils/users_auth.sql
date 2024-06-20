@@ -1,0 +1,20 @@
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    firstname VARCHAR(100) NOT NULL,
+    lastname VARCHAR(100) NOT NULL,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    phone_number BIGINT UNSIGNED UNIQUE NOT NULL,
+    password VARCHAR(256) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'user',
+    isBlocked TINYINT(1) DEFAULT 0,
+    address VARCHAR(200),
+    refreshToken VARCHAR(512),
+    passwordCreatedAt DATETIME,
+    passwordChangedAt DATETIME,
+    passwordResetToken VARCHAR(512),
+    passwordResetExpires BIGINT,
+    otp VARCHAR(256),
+    otpExpiresAt BIGINT,
+    `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

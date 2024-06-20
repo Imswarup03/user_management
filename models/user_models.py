@@ -20,14 +20,14 @@ class User(db.Model):
     isBlocked : str= db.Column(db.Boolean, default=False)
     address : str = db.Column(db.String(200))
     refreshToken : str = db.Column(db.String(512))
-    passwordCreatedAt: str = db.Column(db.String(256))
+    passwordCreatedAt: str = db.Column(db.DateTime)
     passwordChangedAt : str= db.Column(db.DateTime)
     passwordResetToken : str = db.Column(db.String(512))
     passwordResetExpires : str= db.Column(db.BigInteger)
     otp : str = db.Column(db.String(256))
     otpExpiresAt = db.Column(db.BigInteger)
-    timestamp = db.Column(db.String(256), default = datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%d-%m-%Y, %H:%M:%S"))
-    
+    timestamp = db.Column(db.DateTime, default = datetime.now(pytz.timezone('Asia/Kolkata')))
+
 
     def __init__(self, username, firstname, lastname, email, phone_number, password, role=None):
         self.username = username
@@ -37,7 +37,7 @@ class User(db.Model):
         self.phone_number = phone_number
         self.password = bcrypt.generate_password_hash(password,13).decode('utf-8')
         self.role = role if role else 'user'    
-        self.passwordCreatedAt= datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%d-%m-%Y, %H:%M:%S")
+        self.passwordCreatedAt= datetime.now(pytz.timezone('Asia/Kolkata'))
 
     def __repr__(self):
         # print("Database Created Successfully")
@@ -64,5 +64,15 @@ class User(db.Model):
         except Exception as e:
             print(e)
             return {'message':"Success", "staus":False}
-
+    def update_password(self,password,confirm_password):
+        try:
+            if password == confirm_password:
+                self.password= bcrypt.generate_password_hash(password,13).decode('utf-8')
+                self.passwordChangedAt= datetime.now(pytz.timezone('Asia/Kolkata'))
+                db.session.commit()
+                return {'message':"Success", "staus":True}
+        except Exception as e:
+            print(e)
+            return {'message':"Success", "staus":False}
+    
 

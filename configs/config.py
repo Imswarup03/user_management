@@ -12,8 +12,8 @@ class Config:
     SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI
     JWT_SECRET_KEY = SECRET_KEY
     SQLALCHEMY_TRACK_MODIFICATIONS = True
-    JWT_TOKEN_LOCATION = ["headers", "cookies", "json","query-string"]
-    JWT_REFRESH_TOKEN_LOCATION=["headers", "cookies"]
+    JWT_TOKEN_LOCATION = ["headers", "cookies", "json","query_string"]
+    JWT_REFRESH_TOKEN_LOCATION=["headers", "cookies"]   
     JWT_ACCESS_TOKEN_EXPIRES= timedelta(minutes=5)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=3)
     SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")

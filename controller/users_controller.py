@@ -53,7 +53,10 @@ def get_all_users():
 
 
 
-
+@user_controller.route('/update-profile/<int:id>', methods= ['GET'])
+@jwt_required(locations=['headers','cookies'])
+def update_profile(id : int):
+    get_current_user()
 
 
 
