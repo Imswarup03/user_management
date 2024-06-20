@@ -83,13 +83,14 @@ def register():
         if not firstname or not username or not email or not phone_number or not password or not confirm_password:
                     response = jsonify({
                         "message":"Missing Data",
-                        "status_code":400
+                        "statusCode":400
                     })
                     return response,400
             
         elif username and email and phone_number and password and confirm_password and password != confirm_password:
                 response = {
-                    "message":"password and confirm password must be same",   
+                    "message":"password and confirm password must be same",  
+                    "statusCode":400
                 }
                 return jsonify(response),400
             
@@ -395,6 +396,12 @@ def reset_password():
 
             email = decoded_token['sub'].get('email')
             user = User.query.filter_by(email=email).first()
+            current_time= int(time.time())
+            if user.passwordResetExpires <= current_time:
+                return jsonify({
+                    'message': "Your session has expired",
+                    'statusCode': 403
+                }), 403
 
             if not user:
                 return jsonify({
@@ -415,7 +422,7 @@ def reset_password():
                         "statusCode": 200
                     })
                     response.delete_cookie('access_cookies')
-                    user.resetPasswordExpiresAt = None
+                    user.passwordResetExpires = None
                     db.session.commit()
                     return response, 200
                 else:
