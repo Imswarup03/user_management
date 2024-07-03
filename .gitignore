@@ -40,6 +40,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -132,6 +133,7 @@ ENV/
 env.bak/
 venv.bak/
 
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -174,3 +176,6 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+
+#logs
+.log

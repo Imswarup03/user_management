@@ -23,6 +23,7 @@ def isAdmin(current_user):
 
 
 @user_controller.route('/all',methods=['GET'])
+
 @jwt_required(locations=['headers','cookies'])
 def get_all_users():
     token = request.headers.get('Authorization')
@@ -57,6 +58,7 @@ def get_all_users():
 @jwt_required(locations=['headers','cookies'])
 def update_profile(id : int):
     get_current_user()
+    pass
 
 
 

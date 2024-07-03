@@ -18,3 +18,17 @@ CREATE TABLE users (
     otpExpiresAt BIGINT,
     `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE USERS_DETAILS(
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT CONSTRAINT FK_user_id REFERENCES users(id),
+    firstname VARCHAR(100) NOT NULL REFERENCES users(firstname),
+    lastname VARCHAR(100) NOT NULL REFERENCES users(lastname),
+    email VARCHAR(120) UNIQUE NOT NULL REFERENCES users(email),
+    phone_number BIGINT UNSIGNED UNIQUE NOT NULL users(phone_number),
+    prfile_photo VARCHAR(255),
+    designation VARCHAR(120),
+    reporting_manager_id BIGINT CONSTRAINT FK_reporting_manager_id REFERENCES USERS_DETAILS(id),
+    access_resources JSON
+)

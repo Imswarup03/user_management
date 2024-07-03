@@ -3,6 +3,7 @@ import mysql.connector
 import os
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
+from configs.email_config import EmailSender
 
 load_dotenv()
 
@@ -33,3 +34,5 @@ create_db= create_db()
 if create_db:
     db = SQLAlchemy()
     print("DB CREATED SUCCESSFULLY")
+    send_email = EmailSender()
+    

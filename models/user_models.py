@@ -1,5 +1,5 @@
 from datetime import datetime
-from database.settings import db
+from database.settings import db, send_email
 from flask_bcrypt import Bcrypt
 import os 
 import pytz
@@ -7,6 +7,8 @@ import time
 
 
 bcrypt = Bcrypt()
+
+
 class User(db.Model):
     __tablename__ = 'users'
     id : int= db.Column(db.Integer, primary_key=True)
@@ -27,7 +29,6 @@ class User(db.Model):
     otp : str = db.Column(db.String(256))
     otpExpiresAt = db.Column(db.BigInteger)
     timestamp = db.Column(db.DateTime, default = datetime.now(pytz.timezone('Asia/Kolkata')))
-
 
     def __init__(self, username, firstname, lastname, email, phone_number, password, role=None):
         self.username = username
@@ -75,4 +76,26 @@ class User(db.Model):
             print(e)
             return {'message':"Success", "staus":False}
     
+
+class UserDetails(db.Model):
+    __tablename__ = 'users_details'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable = False)
+    profile_photo = db.Column(db.String(255), nullable = True)
+    designation = db.Column(db.String(100), nullable=False)
+    reporting_manager_id = db.Column(db.Integer, db.ForeignKey('users_details.id'), nullable=True)
+    access_resources = db.Column(db.JSON, nullable=True)
+     # Relationships
+
+    # user = db.relationship('User', backref=db.backref('details', uselist=False))
+    # reporting_manager = db.relationship('UserDetails', remote_side=[id], backref='subordinates')
+    def __init__(self, user_id, designation, profile_photo=None, reporting_manager_id=None, access_resources=None):
+        self.user_id = user_id
+        self.profile_photo = profile_photo
+        self.designation = designation
+        self.reporting_manager_id = reporting_manager_id
+        self.access_resources = access_resources
+
+    def __repr__(self):
+        return f'UserDetails for User ID {self.user_id}'
 

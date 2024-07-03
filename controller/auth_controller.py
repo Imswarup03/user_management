@@ -1,12 +1,11 @@
 from flask import jsonify, Blueprint,request,make_response
 import pytz
 from datetime import  datetime
-from models.user_models import User,db
+from models.user_models import User,db, send_email
 from flask_bcrypt import Bcrypt
 from functools import wraps
 from pydantic import BaseModel,EmailStr, ValidationError
 from flask_jwt_extended import JWTManager , create_access_token,create_refresh_token,jwt_required,get_jwt_identity,get_current_user, set_access_cookies, decode_token, set_refresh_cookies
-from configs.email_config import send_email
 import random
 import asyncio
 import os
@@ -19,7 +18,6 @@ jwt= JWTManager()
 
 bcrypt= Bcrypt()
 auth = Blueprint('auth', __name__)
-
 
 @jwt.unauthorized_loader
 def unauthorized_response(callback):
@@ -35,7 +33,7 @@ def invalid_token_response(callback):
         'error': 'invalid_token'
     }), 422
 @jwt.expired_token_loader
-def expired_token_response(jwt_header, jwt_data):
+def expired_token_callback(jwt_header, jwt_data):
     return jsonify({
         'message':"Please relogin again",
         'error':'Expired Token'
@@ -143,7 +141,7 @@ def login():
     "login method for user"
     try:
         sign_input = request.get_json()
-        # print("sign_input",sign_input)
+        print("sign_input====>",sign_input)
         if not sign_input["identifier"]:
             return jsonify({
                 "message":"Missing Data. Atleast provide username or email"
@@ -160,6 +158,12 @@ def login():
             hashed_password = user.password
             check_password_hash = bcrypt.check_password_hash(hashed_password, password )
             # print(user.refreshToken)
+            if user.isBlocked:
+                response= jsonify({
+                    'message':'You are temporarily Blocked to application',
+                    'statusCode':401
+                }),401
+                return response
 
             if check_password_hash:
                 refresh_token = create_refresh_token(user.username)
@@ -172,13 +176,25 @@ def login():
                         "tokens":{
                         "access_token":access_token,
                         "refresh_token":refresh_token
-                        }
+                        },
+                        'details':{
+                            'id':user.id,
+                            'name':user.firstname+' '+user.lastname,
+                            'email':user.email,
+                            'phone_number':user.phone_number,
+                            'role':user.role,
+                            'address':user.address
+                            
+                        },
+                        "statusCode":200
                     }
                     )
                 
                 response.set_cookie(
-                    'refreshToken', refresh_token, max_age=72*60*60, secure= True, httponly=True
+                    'refreshToken', refresh_token, max_age=72*60*60, samesite= None ,secure= True, httponly=True
                     )
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
                 # set_refresh_cookies(response,refresh_token,max_age=72*60*60, secure= True, httponly=True)
 
                 return response,200
@@ -298,7 +314,9 @@ def forgot_password():
             print("cookies", set_access_cookies)
             subject = 'Verification for Reset password'
             body = f"Dear {user.firstname} {user.lastname}. Your OTP is {otp}. Use this to verify your identity."
-            send_email_user= send_email(email,subject,body)
+            
+            send_email_user= send_email.send_email(email,subject,body) 
+            ## Sending Email
             if send_email_user:
                 response = jsonify({
                     "message": "OTP sent Successfully",
@@ -312,9 +330,10 @@ def forgot_password():
             set_password_reset = user.set_password_reset_expiration()
             set_otp= user.generate_and_store_otp(otp, 10, secret_key)
             print("set_otp",set_otp, "set_password_reset",set_password_reset)
+            print("rsponse", response)
             return response,200
     except Exception as e:
-        print(e)
+        print("Error", e)
         return jsonify({
             "message": "Something Went Wrong",
             "statusCode": 500

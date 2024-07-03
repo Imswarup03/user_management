@@ -5,17 +5,24 @@ import os
 from configs.config import Config
 from controller.auth_controller import bcrypt, jwt
 from blueprints.user_blueprint import user_bp
-from database.settings import db
+from database.settings import db, send_email
 # from flask_wtf.csrf import CSRFProtect
+import logging
 
 PORT = os.environ.get('PORT')
+
+logging.basicConfig(
+    filename='api_requests.log',
+    format='%(asctime)s - %(message)s'
+)
+
 
 
 def create_app():
     app = Flask(__name__)
     
     app.config.from_object(Config) 
-    CORS(app,supports_credentials= True)
+    CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
     # CSRFProtect(app)
     jwt.init_app(app)
 
